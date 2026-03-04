@@ -54,6 +54,24 @@ class RainSoftDevice:
     regen_time: datetime | None = None
     install_date: datetime | None = None
     registered_at: datetime | None = None
+    # Water usage
+    daily_water_use: int | None = None
+    water_28_day: int | None = None
+    flow_since_last_regen: int | None = None
+    lifetime_flow: int | None = None
+    # Regeneration
+    last_regen_date: datetime | None = None
+    regens_28_day: int | None = None
+    # Salt
+    average_monthly_salt: int | None = None
+    salt_28_day: int | None = None
+    # Water quality / system
+    hardness: int | None = None
+    iron_level: float | None = None
+    pressure: int | None = None
+    drain_flow: float | None = None
+    # Service
+    months_since_service: int | None = None
 
 
 @dataclass
@@ -313,6 +331,21 @@ class RainSoftApiClient:
                         registered_at=cls._parse_datetime(
                             dev_data.get("registeredAt")
                         ),
+                        daily_water_use=dev_data.get("dailyWaterUse"),
+                        water_28_day=dev_data.get("water28Day"),
+                        flow_since_last_regen=dev_data.get("flowSinceLastRegen"),
+                        lifetime_flow=dev_data.get("lifeTimeFlow"),
+                        last_regen_date=cls._parse_datetime(
+                            dev_data.get("lastRegenDate")
+                        ),
+                        regens_28_day=dev_data.get("regens28Day"),
+                        average_monthly_salt=dev_data.get("averageMonthlySalt"),
+                        salt_28_day=dev_data.get("salt28Day"),
+                        hardness=dev_data.get("hardness"),
+                        iron_level=dev_data.get("ironLevel"),
+                        pressure=dev_data.get("pressure"),
+                        drain_flow=dev_data.get("drainFlow"),
+                        months_since_service=dev_data.get("monthsSinceService"),
                     )
                 )
 

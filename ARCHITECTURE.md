@@ -106,7 +106,7 @@ flowchart TB
     end
 
     subgraph Entities["Entity Platforms"]
-        SE[sensor.py<br/>8 sensors per device]
+        SE[sensor.py<br/>21 sensors per device]
         BE[binary_sensor.py<br/>1 binary sensor per device]
         SW[switch.py<br/>1 switch per device]
     end
@@ -158,7 +158,7 @@ custom_components/rainsoft/
 ├── const.py             # Constants: URLs, config keys, defaults
 ├── coordinator.py       # DataUpdateCoordinator (one per device)
 ├── manifest.json        # HA integration metadata
-├── sensor.py            # 8 sensor entity descriptions
+├── sensor.py            # 21 sensor entity descriptions
 ├── switch.py            # Vacation mode switch (read/write)
 ├── strings.json         # UI text (canonical)
 └── translations/

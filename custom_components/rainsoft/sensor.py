@@ -13,7 +13,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfMass
+from homeassistant.const import UnitOfMass, UnitOfPressure, UnitOfVolume, UnitOfVolumeFlowRate
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -90,6 +90,116 @@ SENSOR_DESCRIPTIONS: tuple[RainSoftSensorEntityDescription, ...] = (
         translation_key="resin_type",
         icon="mdi:flask-outline",
         value_fn=lambda d: d.resin_type,
+    ),
+    # Water usage
+    RainSoftSensorEntityDescription(
+        key="daily_water_use",
+        translation_key="daily_water_use",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfVolume.GALLONS,
+        icon="mdi:water",
+        value_fn=lambda d: d.daily_water_use,
+    ),
+    RainSoftSensorEntityDescription(
+        key="water_28_day",
+        translation_key="water_28_day",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfVolume.GALLONS,
+        icon="mdi:water-plus",
+        value_fn=lambda d: d.water_28_day,
+    ),
+    RainSoftSensorEntityDescription(
+        key="flow_since_last_regen",
+        translation_key="flow_since_last_regen",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfVolume.GALLONS,
+        icon="mdi:water-sync",
+        value_fn=lambda d: d.flow_since_last_regen,
+    ),
+    RainSoftSensorEntityDescription(
+        key="lifetime_flow",
+        translation_key="lifetime_flow",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfVolume.GALLONS,
+        icon="mdi:counter",
+        value_fn=lambda d: d.lifetime_flow,
+    ),
+    # Regeneration
+    RainSoftSensorEntityDescription(
+        key="last_regen_date",
+        translation_key="last_regen_date",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        icon="mdi:history",
+        value_fn=lambda d: d.last_regen_date,
+    ),
+    RainSoftSensorEntityDescription(
+        key="regens_28_day",
+        translation_key="regens_28_day",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:recycle",
+        value_fn=lambda d: d.regens_28_day,
+    ),
+    # Salt
+    RainSoftSensorEntityDescription(
+        key="average_monthly_salt",
+        translation_key="average_monthly_salt",
+        device_class=SensorDeviceClass.WEIGHT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfMass.POUNDS,
+        icon="mdi:scale",
+        value_fn=lambda d: d.average_monthly_salt,
+    ),
+    RainSoftSensorEntityDescription(
+        key="salt_28_day",
+        translation_key="salt_28_day",
+        device_class=SensorDeviceClass.WEIGHT,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfMass.POUNDS,
+        icon="mdi:shaker",
+        value_fn=lambda d: d.salt_28_day,
+    ),
+    # Water quality / system
+    RainSoftSensorEntityDescription(
+        key="hardness",
+        translation_key="hardness",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="gpg",
+        icon="mdi:water-opacity",
+        value_fn=lambda d: d.hardness,
+    ),
+    RainSoftSensorEntityDescription(
+        key="iron_level",
+        translation_key="iron_level",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="ppm",
+        icon="mdi:flask",
+        value_fn=lambda d: d.iron_level,
+    ),
+    RainSoftSensorEntityDescription(
+        key="pressure",
+        translation_key="pressure",
+        device_class=SensorDeviceClass.PRESSURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPressure.PSI,
+        icon="mdi:gauge-low",
+        value_fn=lambda d: d.pressure,
+    ),
+    RainSoftSensorEntityDescription(
+        key="drain_flow",
+        translation_key="drain_flow",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="gpm",
+        icon="mdi:pipe-valve",
+        value_fn=lambda d: d.drain_flow,
+    ),
+    # Service
+    RainSoftSensorEntityDescription(
+        key="months_since_service",
+        translation_key="months_since_service",
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement="months",
+        icon="mdi:wrench-clock",
+        value_fn=lambda d: d.months_since_service,
     ),
 )
 

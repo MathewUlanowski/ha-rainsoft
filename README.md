@@ -9,7 +9,7 @@ Monitor your RainSoft water softener through the [RainSoft Remind portal](https:
 ## Features
 
 - Auto-discovers all locations and devices on your RainSoft Remind account
-- 8 sensor entities per device (salt levels, capacity, regeneration, status)
+- 21 sensor entities per device (water usage, salt, regeneration, water quality, system)
 - 1 binary sensor entity (low salt alert)
 - 1 switch entity (vacation mode toggle)
 - Configurable polling interval (default: 30 minutes)
@@ -57,9 +57,22 @@ After setup, click **Configure** on the integration to adjust:
 |--------|------|-------------|
 | Salt Remaining | lb | Current salt level in the brine tank |
 | Max Salt Capacity | lb | Maximum salt capacity |
+| Average Monthly Salt | lb | Average monthly salt consumption |
+| Salt Used (28 Days) | lb | Salt consumed in the last 28 days |
 | Capacity Remaining | grains | Remaining water softening capacity |
 | Status | | Device status (e.g. "OK", "Low Salt") |
+| Daily Water Use | gal | Daily water usage |
+| 28-Day Water Use | gal | Water used in the last 28 days |
+| Flow Since Last Regen | gal | Water flow since last regeneration |
+| Lifetime Water Flow | gal | Total lifetime water flow |
 | Next Regeneration | timestamp | Next scheduled regeneration time |
+| Last Regeneration | timestamp | Most recent regeneration date |
+| Regenerations (28 Days) | | Number of regenerations in last 28 days |
+| Water Hardness | gpg | Water hardness in grains per gallon |
+| Iron Level | ppm | Iron level in parts per million |
+| System Pressure | psi | System pressure |
+| Drain Flow Rate | gpm | Drain flow rate in gallons per minute |
+| Months Since Service | months | Time since last service |
 | Install Date | timestamp | When the device was installed |
 | Unit Size | | System size designation |
 | Resin Type | | Type of resin installed |

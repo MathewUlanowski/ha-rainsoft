@@ -48,7 +48,20 @@
       "regen_time": { "name": "Next Regeneration" },
       "install_date": { "name": "Install Date" },
       "unit_size": { "name": "Unit Size" },
-      "resin_type": { "name": "Resin Type" }
+      "resin_type": { "name": "Resin Type" },
+      "daily_water_use": { "name": "Daily Water Use" },
+      "water_28_day": { "name": "28-Day Water Use" },
+      "flow_since_last_regen": { "name": "Flow Since Last Regen" },
+      "lifetime_flow": { "name": "Lifetime Water Flow" },
+      "last_regen_date": { "name": "Last Regeneration" },
+      "regens_28_day": { "name": "Regenerations (28 Days)" },
+      "average_monthly_salt": { "name": "Average Monthly Salt" },
+      "salt_28_day": { "name": "Salt Used (28 Days)" },
+      "hardness": { "name": "Water Hardness" },
+      "iron_level": { "name": "Iron Level" },
+      "pressure": { "name": "System Pressure" },
+      "drain_flow": { "name": "Drain Flow Rate" },
+      "months_since_service": { "name": "Months Since Service" }
     },
     "binary_sensor": {
       "low_salt": { "name": "Low Salt" }
