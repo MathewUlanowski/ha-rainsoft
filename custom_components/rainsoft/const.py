@@ -13,6 +13,7 @@ API_LOGIN = "/api/remindapp/v2/login"
 API_LOGOUT = "/api/remindapp/v2/logout"
 API_CUSTOMER = "/api/remindapp/v2/customer"
 API_LOCATIONS = "/api/remindapp/v2/locations/{customer_id}"
+API_DEVICE = "/api/remindapp/v2/device/{device_id}"
 API_DEVICE_SETTINGS = "/api/remindapp/v2/device/{device_id}/setting_changes"
 
 # Auth header

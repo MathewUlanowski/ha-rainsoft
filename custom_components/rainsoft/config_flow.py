@@ -135,14 +135,11 @@ class RainSoftConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> RainSoftOptionsFlow:
         """Get the options flow handler."""
-        return RainSoftOptionsFlow(config_entry)
+        return RainSoftOptionsFlow()
 
 
 class RainSoftOptionsFlow(OptionsFlow):
     """Handle options for RainSoft."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

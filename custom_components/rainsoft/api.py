@@ -15,6 +15,7 @@ import aiohttp
 
 from .const import (
     API_CUSTOMER,
+    API_DEVICE,
     API_DEVICE_SETTINGS,
     API_LOCATIONS,
     API_LOGIN,
@@ -281,7 +282,7 @@ class RainSoftApiClient:
             return True
 
     async def get_locations(self) -> list[RainSoftLocation]:
-        """Fetch customer + locations using cached token."""
+        """Fetch customer + locations + per-device details using cached token."""
         async with self._request_lock:
             session = await self._get_session()
 
@@ -295,9 +296,25 @@ class RainSoftApiClient:
                     )
                 self._customer_id = int(cid)
 
-            # Get locations + devices
+            # Get locations + devices (basic info)
             path = API_LOCATIONS.format(customer_id=self._customer_id)
             data = await self._api_get(session, path)
+
+            # Enrich each device with detailed data from /device/{id}
+            for loc_data in data.get("locationListData", []):
+                for dev_data in loc_data.get("devices", []):
+                    device_id = dev_data.get("id")
+                    if device_id:
+                        try:
+                            detail_path = API_DEVICE.format(device_id=device_id)
+                            detail = await self._api_get(session, detail_path)
+                            # Merge detail fields into device data (detail wins)
+                            dev_data.update(detail)
+                        except (CannotConnectError, AuthenticationError):
+                            _LOGGER.warning(
+                                "Failed to fetch details for device %s", device_id
+                            )
+
             return self._parse_locations(data)
 
     async def set_vacation_mode(self, device_id: int, *, enabled: bool) -> None:
