@@ -1,0 +1,60 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to RainSoft Remind",
+        "description": "Enter your RainSoft Remind portal credentials.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with RainSoft",
+        "description": "Your session has expired. Please re-enter your credentials.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the RainSoft portal.",
+      "invalid_auth": "Invalid email or password.",
+      "no_devices": "No RainSoft devices found on this account.",
+      "unknown": "Unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This RainSoft account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "RainSoft Options",
+        "data": {
+          "scan_interval": "Polling interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "salt_lbs": { "name": "Salt Remaining" },
+      "max_salt": { "name": "Max Salt Capacity" },
+      "capacity_remaining": { "name": "Capacity Remaining" },
+      "status": { "name": "Status" },
+      "regen_time": { "name": "Next Regeneration" },
+      "install_date": { "name": "Install Date" },
+      "unit_size": { "name": "Unit Size" },
+      "resin_type": { "name": "Resin Type" }
+    },
+    "binary_sensor": {
+      "low_salt": { "name": "Low Salt" }
+    },
+    "switch": {
+      "vacation_mode": { "name": "Vacation Mode" }
+    }
+  }
+}
