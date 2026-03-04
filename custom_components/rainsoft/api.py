@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 import aiohttp
 
@@ -277,7 +277,7 @@ class RainSoftApiClient:
                 setting_changes = json_mod.dumps([
                     {
                         "vacation_mode": "1" if enabled else "0",
-                        "set_at": datetime.utcnow().strftime(
+                        "set_at": datetime.now(timezone.utc).strftime(
                             "%Y-%m-%dT%H:%M:%S.%f"
                         )[:-3] + "Z",
                     }
@@ -291,11 +291,14 @@ class RainSoftApiClient:
 
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:
-        """Parse an ISO datetime string from the API."""
+        """Parse an ISO datetime string from the API as UTC."""
         if not value:
             return None
         try:
-            return datetime.fromisoformat(value)
+            dt = datetime.fromisoformat(value)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
         except (ValueError, TypeError):
             return None
 
