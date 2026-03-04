@@ -97,23 +97,23 @@ sequenceDiagram
     participant API as RainSoft API Client
     participant RS as remind.rainsoft.com
 
-    loop Every 30 minutes (login-fetch-logout)
-        API->>RS: POST /login (credentials)
-        RS-->>API: { authentication_token }
-        API->>RS: GET /customer
-        RS-->>API: { id: customer_id }
+    API->>RS: POST /login (credentials)
+    RS-->>API: { authentication_token }
+    Note over API: Cache token (24h TTL)
+
+    loop Every 30 minutes (reuse cached token)
         API->>RS: GET /locations/{customer_id}
         RS-->>API: JSON (locations + devices)
-        API->>RS: DELETE /logout (token)
-        RS-->>API: 200 OK
         API-->>HA: Update sensor entities
     end
+
+    Note over API,RS: On 401: discard token, re-login, retry
 ```
 
-This integration uses the same JSON API as the RainSoft Remind mobile app. Each poll cycle follows a **login-fetch-logout** pattern — the auth token is created, used, and immediately invalidated so no tokens linger between intervals.
+This integration uses the same JSON API as the RainSoft Remind mobile app. The auth token is **cached for up to 24 hours** and reused across polling intervals. If any request receives a 401, the token is automatically refreshed and the request retried.
 
 - **Auto-discovery** of customer ID, locations, and devices
-- **Login-fetch-logout** pattern eliminates token expiry concerns
+- **Cached token** with 24h TTL and automatic retry on 401
 - **Multiple devices** supported with independent polling coordinators per device
 
 ## Troubleshooting

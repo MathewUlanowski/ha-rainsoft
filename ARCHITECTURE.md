@@ -123,11 +123,11 @@ flowchart TB
 
 ## Key Design Decisions
 
-### Login-Fetch-Logout Pattern
-Every data fetch follows the pattern: **login → fetch → logout**. The auth token is created, used, and immediately invalidated within a single operation. No tokens are left alive between polling intervals. This eliminates token expiry concerns and minimizes the attack surface.
+### Cached Token with Auto-Retry
+The auth token is cached for up to **24 hours** and reused across polling intervals. If any API request receives a **401 Unauthorized**, the token is discarded and a fresh login is attempted automatically (one retry). On shutdown, the client logs out to invalidate the cached token. This reduces API calls from 4 per poll cycle (login + customer + locations + logout) to just 1-2 (customer + locations), while still handling token expiry gracefully.
 
 ### One Coordinator Per Device
-Each physical device gets its own `DataUpdateCoordinator`. If one device fails to update, others remain available. The coordinators share the same `RainSoftApiClient` instance. An `asyncio.Lock` ensures only one login-fetch-logout cycle runs at a time.
+Each physical device gets its own `DataUpdateCoordinator`. If one device fails to update, others remain available. The coordinators share the same `RainSoftApiClient` instance. An `asyncio.Lock` ensures only one API operation runs at a time.
 
 ### No External Dependencies
 The integration has **zero pip requirements** beyond what Home Assistant already provides. The JSON API only needs `aiohttp`, which is bundled with HA. This makes installation simpler and avoids dependency conflicts.
@@ -139,7 +139,7 @@ The `/device/{id}/setting_changes` endpoint accepts a form-encoded POST with a `
 [{"vacation_mode": "1", "set_at": "2026-03-04T01:04:40.077Z"}]
 ```
 
-The switch entity calls `set_vacation_mode()` on the API client, which follows the same login-post-logout atomic pattern. After the API call succeeds, the coordinator is refreshed to confirm the new state.
+The switch entity calls `set_vacation_mode()` on the API client, which uses the cached auth token (with auto-retry on 401). After the API call succeeds, the coordinator is refreshed to confirm the new state.
 
 ### Auto-Discovery
 Users only provide email + password. The integration automatically:
@@ -170,11 +170,13 @@ custom_components/rainsoft/
 ```mermaid
 stateDiagram-v2
     [*] --> NoToken
-    NoToken --> Authenticated: POST /login
-    Authenticated --> DataFetched: GET /locations or POST /setting_changes
-    DataFetched --> NoToken: DELETE /logout
-    Authenticated --> AuthFailed: Login rejected
+    NoToken --> Cached: POST /login (on first request or after expiry)
+    Cached --> Cached: Reuse token for GET/POST requests
+    Cached --> NoToken: 401 received (invalidate, then retry login)
+    Cached --> NoToken: Token age > 24 hours
+    Cached --> [*]: DELETE /logout (on shutdown)
+    NoToken --> AuthFailed: Login rejected
     AuthFailed --> [*]: HA triggers re-auth flow
 ```
 
-Tokens are **never persisted** between polling intervals. Each operation (data fetch or setting change) follows an atomic login → action → logout cycle. The token is created, used for one or more API calls within the same operation, then immediately invalidated via the logout endpoint.
+The auth token is **cached in memory** for up to 24 hours and reused across polling intervals. When a request gets a 401, the token is discarded and a fresh login is attempted once. On integration shutdown, the cached token is invalidated via the logout endpoint.

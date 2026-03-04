@@ -1,8 +1,7 @@
 """RainSoft Remind API client.
 
 Uses the mobile app's JSON API at /api/remindapp/v2/.
-Each data fetch authenticates, retrieves data, then immediately logs out
-so no tokens are left lingering.
+Caches the auth token for up to 24 hours and re-authenticates on 401 or expiry.
 """
 
 from __future__ import annotations
@@ -10,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import aiohttp
 
@@ -23,6 +22,8 @@ from .const import (
     AUTH_HEADER,
     BASE_URL,
 )
+
+TOKEN_MAX_AGE = timedelta(hours=24)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,8 +91,8 @@ class RainSoftLocation:
 class RainSoftApiClient:
     """Client for the RainSoft Remind JSON API.
 
-    Uses a login-fetch-logout pattern: each data request authenticates,
-    retrieves the needed data, then immediately invalidates the token.
+    Caches the auth token for up to 24 hours. If a request receives a 401
+    the token is discarded and a fresh login is attempted once before failing.
     """
 
     def __init__(
@@ -105,6 +106,8 @@ class RainSoftApiClient:
         self._session = session
         self._owns_session = session is None
         self._customer_id: int | None = None
+        self._token: str | None = None
+        self._token_acquired: datetime | None = None
         self._request_lock = asyncio.Lock()
 
     async def _get_session(self) -> aiohttp.ClientSession:
@@ -115,7 +118,11 @@ class RainSoftApiClient:
         return self._session
 
     async def close(self) -> None:
-        """Close the session if we own it."""
+        """Logout any cached token and close the session if we own it."""
+        if self._token and self._session and not self._session.closed:
+            await self._logout(self._session, self._token)
+            self._token = None
+            self._token_acquired = None
         if self._owns_session and self._session and not self._session.closed:
             await self._session.close()
 
@@ -175,61 +182,95 @@ class RainSoftApiClient:
         except (aiohttp.ClientError, asyncio.TimeoutError):
             _LOGGER.debug("Logout request failed, token may linger")
 
+    def _invalidate_token(self) -> None:
+        """Discard the cached token."""
+        self._token = None
+        self._token_acquired = None
+
+    def _token_is_valid(self) -> bool:
+        """Return True if we have a cached token that hasn't expired."""
+        if self._token is None or self._token_acquired is None:
+            return False
+        return datetime.now(timezone.utc) - self._token_acquired < TOKEN_MAX_AGE
+
+    async def _ensure_token(self, session: aiohttp.ClientSession) -> str:
+        """Return a valid cached token, or login to get a fresh one."""
+        if self._token_is_valid():
+            return self._token  # type: ignore[return-value]
+        self._token = await self._login(session)
+        self._token_acquired = datetime.now(timezone.utc)
+        return self._token
+
     async def _api_get(
-        self, session: aiohttp.ClientSession, token: str, path: str
+        self, session: aiohttp.ClientSession, path: str
     ) -> dict:
-        """Make an authenticated GET request."""
+        """Authenticated GET with automatic retry on 401."""
         url = f"{BASE_URL}{path}"
 
-        try:
-            async with session.get(
-                url,
-                headers={
-                    AUTH_HEADER: token,
-                    "Accept": "application/json",
-                },
-                timeout=aiohttp.ClientTimeout(total=30),
-            ) as resp:
-                if resp.status == 401:
-                    raise AuthenticationError("Token rejected")
-                resp.raise_for_status()
-                return await resp.json()
+        for attempt in range(2):
+            token = await self._ensure_token(session)
+            try:
+                async with session.get(
+                    url,
+                    headers={
+                        AUTH_HEADER: token,
+                        "Accept": "application/json",
+                    },
+                    timeout=aiohttp.ClientTimeout(total=30),
+                ) as resp:
+                    if resp.status == 401:
+                        _LOGGER.debug("Token rejected (attempt %d), re-authenticating", attempt + 1)
+                        self._invalidate_token()
+                        if attempt == 0:
+                            continue
+                        raise AuthenticationError("Token rejected after re-login")
+                    resp.raise_for_status()
+                    return await resp.json()
 
-        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-            raise CannotConnectError(
-                f"API request failed: {err}"
-            ) from err
+            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+                raise CannotConnectError(
+                    f"API request failed: {err}"
+                ) from err
+
+        raise CannotConnectError("Unexpected: exhausted retry attempts")
 
     async def _api_post_form(
         self,
         session: aiohttp.ClientSession,
-        token: str,
         path: str,
         form_data: dict,
     ) -> dict:
-        """Make an authenticated form-encoded POST request."""
+        """Authenticated form-encoded POST with automatic retry on 401."""
         url = f"{BASE_URL}{path}"
 
-        try:
-            async with session.post(
-                url,
-                data=form_data,
-                headers={
-                    AUTH_HEADER: token,
-                    "Accept": "application/json",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                timeout=aiohttp.ClientTimeout(total=30),
-            ) as resp:
-                if resp.status == 401:
-                    raise AuthenticationError("Token rejected")
-                resp.raise_for_status()
-                return await resp.json()
+        for attempt in range(2):
+            token = await self._ensure_token(session)
+            try:
+                async with session.post(
+                    url,
+                    data=form_data,
+                    headers={
+                        AUTH_HEADER: token,
+                        "Accept": "application/json",
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                    timeout=aiohttp.ClientTimeout(total=30),
+                ) as resp:
+                    if resp.status == 401:
+                        _LOGGER.debug("Token rejected (attempt %d), re-authenticating", attempt + 1)
+                        self._invalidate_token()
+                        if attempt == 0:
+                            continue
+                        raise AuthenticationError("Token rejected after re-login")
+                    resp.raise_for_status()
+                    return await resp.json()
 
-        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-            raise CannotConnectError(
-                f"API request failed: {err}"
-            ) from err
+            except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+                raise CannotConnectError(
+                    f"API request failed: {err}"
+                ) from err
+
+        raise CannotConnectError("Unexpected: exhausted retry attempts")
 
     async def validate_credentials(self) -> bool:
         """Test login/logout cycle. Used by config flow."""
@@ -240,54 +281,44 @@ class RainSoftApiClient:
             return True
 
     async def get_locations(self) -> list[RainSoftLocation]:
-        """Login, fetch customer + locations, logout."""
+        """Fetch customer + locations using cached token."""
         async with self._request_lock:
             session = await self._get_session()
-            token = await self._login(session)
 
-            try:
-                # Get customer ID if we don't have it cached
-                if self._customer_id is None:
-                    data = await self._api_get(session, token, API_CUSTOMER)
-                    cid = data.get("id")
-                    if not cid:
-                        raise CannotConnectError(
-                            "No customer ID in profile response"
-                        )
-                    self._customer_id = int(cid)
+            # Get customer ID if we don't have it cached
+            if self._customer_id is None:
+                data = await self._api_get(session, API_CUSTOMER)
+                cid = data.get("id")
+                if not cid:
+                    raise CannotConnectError(
+                        "No customer ID in profile response"
+                    )
+                self._customer_id = int(cid)
 
-                # Get locations + devices
-                path = API_LOCATIONS.format(customer_id=self._customer_id)
-                data = await self._api_get(session, token, path)
-                return self._parse_locations(data)
-
-            finally:
-                await self._logout(session, token)
+            # Get locations + devices
+            path = API_LOCATIONS.format(customer_id=self._customer_id)
+            data = await self._api_get(session, path)
+            return self._parse_locations(data)
 
     async def set_vacation_mode(self, device_id: int, *, enabled: bool) -> None:
-        """Login, toggle vacation mode on a device, logout."""
+        """Toggle vacation mode on a device using cached token."""
         import json as json_mod
 
         async with self._request_lock:
             session = await self._get_session()
-            token = await self._login(session)
-
-            try:
-                path = API_DEVICE_SETTINGS.format(device_id=device_id)
-                setting_changes = json_mod.dumps([
-                    {
-                        "vacation_mode": "1" if enabled else "0",
-                        "set_at": datetime.now(timezone.utc).strftime(
-                            "%Y-%m-%dT%H:%M:%S.%f"
-                        )[:-3] + "Z",
-                    }
-                ])
-                await self._api_post_form(
-                    session, token, path,
-                    {"settingChanges": setting_changes},
-                )
-            finally:
-                await self._logout(session, token)
+            path = API_DEVICE_SETTINGS.format(device_id=device_id)
+            setting_changes = json_mod.dumps([
+                {
+                    "vacation_mode": "1" if enabled else "0",
+                    "set_at": datetime.now(timezone.utc).strftime(
+                        "%Y-%m-%dT%H:%M:%S.%f"
+                    )[:-3] + "Z",
+                }
+            ])
+            await self._api_post_form(
+                session, path,
+                {"settingChanges": setting_changes},
+            )
 
     @staticmethod
     def _parse_datetime(value: str | None) -> datetime | None:
