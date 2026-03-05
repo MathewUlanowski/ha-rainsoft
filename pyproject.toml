@@ -1,12 +1,44 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "ha-rainsoft"
 version = "1.1.0"
 description = "RainSoft water softener integration for Home Assistant"
 requires-python = ">=3.12"
 
+[project.optional-dependencies]
+test = [
+    "pytest==8.*",
+    "pytest-asyncio==0.24.*",
+    "pytest-cov==6.*",
+    "aiohttp==3.*",
+    "ruff==0.8.*",
+]
+
+[tool.setuptools.packages]
+find = {include = ["custom_components*"]}
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["custom_components/rainsoft"]
+omit = [
+    "tests/*",
+    "custom_components/rainsoft/sensor.py",
+    "custom_components/rainsoft/binary_sensor.py",
+    "custom_components/rainsoft/button.py",
+    "custom_components/rainsoft/switch.py",
+    "custom_components/rainsoft/config_flow.py",
+    "custom_components/rainsoft/__init__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 60
 
 [tool.ruff]
 target-version = "py312"

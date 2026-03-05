@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff==0.8.*
+      - run: pip install .[test]
       - run: ruff check custom_components/ tests/
       - run: ruff format --check custom_components/ tests/
 
@@ -35,6 +35,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install dependencies
-        run: pip install -r requirements_test.txt
+        run: pip install .[test]
       - name: Run tests
-        run: pytest tests/ -v --tb=short
+        run: pytest tests/ -v --tb=short --cov --cov-report=term-missing
