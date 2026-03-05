@@ -1,6 +1,7 @@
 # RainSoft Water Softener Integration for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![CI](https://github.com/MathewUlanowski/ha-rainsoft/actions/workflows/ci.yml/badge.svg)](https://github.com/MathewUlanowski/ha-rainsoft/actions/workflows/ci.yml)
 
 Monitor your RainSoft water softener through the [RainSoft Remind portal](https://remind.rainsoft.com) in Home Assistant.
 
