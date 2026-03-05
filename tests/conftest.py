@@ -1,101 +1,76 @@
-"""Fixtures for RainSoft integration tests."""
+"""Shared fixtures for RainSoft tests."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, patch
+import sys
+from types import ModuleType
+from unittest.mock import AsyncMock, MagicMock
 
+import aiohttp
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.rainsoft.api import RainSoftDevice, RainSoftLocation
-from custom_components.rainsoft.const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
+# ---------------------------------------------------------------------------
+# Stub out homeassistant so we can import custom_components.rainsoft.api
+# without installing the full Home Assistant package.
+# ---------------------------------------------------------------------------
+
+_HA_MODULES = [
+    "homeassistant",
+    "homeassistant.config_entries",
+    "homeassistant.const",
+    "homeassistant.core",
+    "homeassistant.exceptions",
+    "homeassistant.helpers",
+    "homeassistant.helpers.entity",
+    "homeassistant.helpers.entity_platform",
+    "homeassistant.helpers.device_registry",
+    "homeassistant.helpers.typing",
+    "homeassistant.helpers.update_coordinator",
+    "homeassistant.components",
+    "homeassistant.components.button",
+    "homeassistant.components.sensor",
+    "homeassistant.components.binary_sensor",
+    "homeassistant.components.switch",
+    "homeassistant.data_entry_flow",
+]
+
+
+class _StubModule(ModuleType):
+    """Module stub that returns MagicMock for any missing attribute."""
+
+    def __getattr__(self, name: str):
+        return MagicMock()
+
+
+for _mod_name in _HA_MODULES:
+    if _mod_name not in sys.modules:
+        sys.modules[_mod_name] = _StubModule(_mod_name)
+
+# ---------------------------------------------------------------------------
 
 MOCK_EMAIL = "test@example.com"
 MOCK_PASSWORD = "testpassword"
 MOCK_TOKEN = "fake-auth-token-123"
-MOCK_CUSTOMER_ID = 99
-MOCK_DEVICE_ID = 146301
+
+
+def mock_response(status=200, json_data=None):
+    """Create a mock aiohttp response context manager."""
+    resp = AsyncMock()
+    resp.status = status
+    resp.json = AsyncMock(return_value=json_data or {})
+    resp.raise_for_status = MagicMock()
+    if status >= 400:
+        resp.raise_for_status.side_effect = aiohttp.ClientResponseError(
+            request_info=MagicMock(), history=(), status=status
+        )
+    resp.__aenter__ = AsyncMock(return_value=resp)
+    resp.__aexit__ = AsyncMock(return_value=False)
+    return resp
 
 
 @pytest.fixture
-def mock_device() -> RainSoftDevice:
-    """Return a mock RainSoftDevice."""
-    return RainSoftDevice(
-        device_id=MOCK_DEVICE_ID,
-        name="EC5",
-        model="EC5",
-        serial_number=123456,
-        unit_size="1.0 cu ft",
-        resin_type="Standard",
-        status_code="OK",
-        status_name="OK",
-        salt_lbs=40,
-        max_salt=80,
-        capacity_remaining=15000,
-        is_vacation_mode=False,
-        regen_time=datetime(2026, 3, 5, 2, 0, tzinfo=timezone.utc),
-        install_date=datetime(2024, 1, 15, tzinfo=timezone.utc),
-        registered_at=datetime(2024, 1, 20, tzinfo=timezone.utc),
-        daily_water_use=75,
-        water_28_day=2100,
-        flow_since_last_regen=500,
-        lifetime_flow=150000,
-        last_regen_date=datetime(2026, 3, 1, 2, 0, tzinfo=timezone.utc),
-        regens_28_day=4,
-        average_monthly_salt=10,
-        salt_28_day=8,
-        hardness=15,
-        iron_level=0.5,
-        pressure=60,
-        drain_flow=2.5,
-        months_since_service=6,
-    )
-
-
-@pytest.fixture
-def mock_location(mock_device: RainSoftDevice) -> RainSoftLocation:
-    """Return a mock RainSoftLocation."""
-    return RainSoftLocation(
-        location_id=1,
-        name="Home",
-        address="123 Main St",
-        city="Springfield",
-        state="IL",
-        zipcode="62704",
-        devices=[mock_device],
-    )
-
-
-@pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(enable_custom_integrations):
-    """Enable custom integrations for all tests."""
-    yield
-
-
-@pytest.fixture
-def mock_config_entry(hass) -> MockConfigEntry:
-    """Create a mock config entry."""
-    entry = MockConfigEntry(
-        domain=DOMAIN,
-        title=MOCK_EMAIL,
-        data={CONF_EMAIL: MOCK_EMAIL, CONF_PASSWORD: MOCK_PASSWORD},
-        unique_id=MOCK_EMAIL,
-    )
-    entry.add_to_hass(hass)
-    return entry
-
-
-@pytest.fixture
-def mock_api_client(mock_location: RainSoftLocation):
-    """Patch RainSoftApiClient for integration tests."""
-    with patch(
-        "custom_components.rainsoft.RainSoftApiClient",
-        autospec=True,
-    ) as mock_cls:
-        client = mock_cls.return_value
-        client.validate_credentials = AsyncMock(return_value=True)
-        client.get_locations = AsyncMock(return_value=[mock_location])
-        client.set_vacation_mode = AsyncMock()
-        client.close = AsyncMock()
-        yield client
+def mock_session():
+    """Return a mock aiohttp session."""
+    session = AsyncMock(spec=aiohttp.ClientSession)
+    session.closed = False
+    return session
