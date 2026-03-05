@@ -4,7 +4,7 @@
 
 Monitor your RainSoft water softener through the [RainSoft Remind portal](https://remind.rainsoft.com) in Home Assistant.
 
-> **Note:** This is an unofficial community integration. It is not affiliated with or endorsed by RainSoft / EcoWater Systems.
+> **Note:** This is an unofficial community integration. It is not affiliated with or endorsed by RainSoft.
 
 ## Features
 
@@ -12,6 +12,8 @@ Monitor your RainSoft water softener through the [RainSoft Remind portal](https:
 - 21 sensor entities per device (water usage, salt, regeneration, water quality, system)
 - 1 binary sensor entity (low salt alert)
 - 1 switch entity (vacation mode toggle)
+- 1 button entity (manual refresh)
+- Pre-built Lovelace dashboard with gauges and history graphs
 - Configurable polling interval (default: 30 minutes)
 - Uses the official RainSoft Remind mobile app API (no web scraping)
 
@@ -88,6 +90,23 @@ After setup, click **Configure** on the integration to adjust:
 | Entity | Description |
 |--------|-------------|
 | Vacation Mode | Toggle vacation mode on/off via the RainSoft API |
+
+### Buttons (per device)
+
+| Entity | Description |
+|--------|-------------|
+| Refresh Data | Trigger an immediate data refresh without waiting for the next poll |
+
+## Dashboard
+
+A ready-to-use Lovelace dashboard is included at [`dashboards/rainsoft-dashboard.yaml`](dashboards/rainsoft-dashboard.yaml). It provides:
+
+- **Gauges** with color-coded segments for salt level and capacity remaining
+- **History graphs** for salt, daily water use, 28-day water use, and capacity
+- **Controls** for vacation mode and manual refresh
+- **Entity cards** for water quality, regeneration, and device info
+
+To import: **Settings** > **Dashboards** > **Add Dashboard** > switch to YAML mode and paste the contents.
 
 ## How It Works
 
