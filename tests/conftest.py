@@ -67,6 +67,12 @@ def mock_location(mock_device: RainSoftDevice) -> RainSoftLocation:
     )
 
 
+@pytest.fixture(autouse=True)
+def auto_enable_custom_integrations(enable_custom_integrations):
+    """Enable custom integrations for all tests."""
+    yield
+
+
 @pytest.fixture
 def mock_config_entry(hass) -> MockConfigEntry:
     """Create a mock config entry."""
