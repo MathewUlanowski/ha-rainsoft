@@ -21,6 +21,11 @@ env/
 .DS_Store
 Thumbs.db
 
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
 # Home Assistant
 *.db
 *.db-shm
