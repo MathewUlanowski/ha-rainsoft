@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
 import pytest
@@ -17,14 +17,8 @@ from custom_components.rainsoft.api import (
 from .conftest import MOCK_EMAIL, MOCK_PASSWORD, MOCK_TOKEN
 
 
-@pytest.fixture
-def api_client():
-    """Return a fresh API client."""
-    return RainSoftApiClient(MOCK_EMAIL, MOCK_PASSWORD)
-
-
 def _mock_response(status=200, json_data=None):
-    """Create a mock aiohttp response."""
+    """Create a mock aiohttp response context manager."""
     resp = AsyncMock()
     resp.status = status
     resp.json = AsyncMock(return_value=json_data or {})
@@ -33,75 +27,78 @@ def _mock_response(status=200, json_data=None):
         resp.raise_for_status.side_effect = aiohttp.ClientResponseError(
             request_info=MagicMock(), history=(), status=status
         )
-    # Support async context manager
     resp.__aenter__ = AsyncMock(return_value=resp)
     resp.__aexit__ = AsyncMock(return_value=False)
     return resp
+
+
+@pytest.fixture
+def api_client():
+    """Return an API client with a mock session."""
+    mock_session = AsyncMock(spec=aiohttp.ClientSession)
+    mock_session.closed = False
+    client = RainSoftApiClient(MOCK_EMAIL, MOCK_PASSWORD, session=mock_session)
+    return client, mock_session
 
 
 class TestLogin:
     """Tests for the login flow."""
 
     async def test_login_success(self, api_client):
-        login_resp = _mock_response(200, {"authentication_token": MOCK_TOKEN})
+        client, session = api_client
+        session.post.return_value = _mock_response(200, {"authentication_token": MOCK_TOKEN})
 
-        with patch.object(aiohttp.ClientSession, "post", return_value=login_resp):
-            session = await api_client._get_session()
-            token = await api_client._login(session)
-
+        token = await client._login(session)
         assert token == MOCK_TOKEN
 
     async def test_login_invalid_credentials(self, api_client):
-        login_resp = _mock_response(401)
+        client, session = api_client
+        session.post.return_value = _mock_response(401)
 
-        with patch.object(aiohttp.ClientSession, "post", return_value=login_resp):
-            session = await api_client._get_session()
-            with pytest.raises(AuthenticationError, match="Invalid email or password"):
-                await api_client._login(session)
+        with pytest.raises(AuthenticationError, match="Invalid email or password"):
+            await client._login(session)
 
     async def test_login_server_error(self, api_client):
-        login_resp = _mock_response(500)
+        client, session = api_client
+        session.post.return_value = _mock_response(500)
 
-        with patch.object(aiohttp.ClientSession, "post", return_value=login_resp):
-            session = await api_client._get_session()
-            with pytest.raises(CannotConnectError, match="HTTP 500"):
-                await api_client._login(session)
+        with pytest.raises(CannotConnectError, match="HTTP 500"):
+            await client._login(session)
 
     async def test_login_no_token_in_response(self, api_client):
-        login_resp = _mock_response(200, {"some_other_field": "value"})
+        client, session = api_client
+        session.post.return_value = _mock_response(200, {"some_other_field": "value"})
 
-        with patch.object(aiohttp.ClientSession, "post", return_value=login_resp):
-            session = await api_client._get_session()
-            with pytest.raises(AuthenticationError, match="No authentication_token"):
-                await api_client._login(session)
+        with pytest.raises(AuthenticationError, match="No authentication_token"):
+            await client._login(session)
 
     async def test_login_network_error(self, api_client):
-        with patch.object(
-            aiohttp.ClientSession,
-            "post",
-            side_effect=aiohttp.ClientError("Connection refused"),
-        ):
-            session = await api_client._get_session()
-            with pytest.raises(CannotConnectError, match="Cannot connect"):
-                await api_client._login(session)
+        client, session = api_client
+        session.post.side_effect = aiohttp.ClientError("Connection refused")
+
+        with pytest.raises(CannotConnectError, match="Cannot connect"):
+            await client._login(session)
 
 
 class TestTokenManagement:
     """Tests for token caching and invalidation."""
 
-    def test_token_not_valid_initially(self, api_client):
-        assert not api_client._token_is_valid()
+    def test_token_not_valid_initially(self):
+        client = RainSoftApiClient(MOCK_EMAIL, MOCK_PASSWORD, session=MagicMock())
+        assert not client._token_is_valid()
 
-    def test_token_valid_after_set(self, api_client):
-        api_client._token = MOCK_TOKEN
-        api_client._token_acquired = datetime.now(timezone.utc)
-        assert api_client._token_is_valid()
+    def test_token_valid_after_set(self):
+        client = RainSoftApiClient(MOCK_EMAIL, MOCK_PASSWORD, session=MagicMock())
+        client._token = MOCK_TOKEN
+        client._token_acquired = datetime.now(timezone.utc)
+        assert client._token_is_valid()
 
-    def test_token_invalid_after_invalidation(self, api_client):
-        api_client._token = MOCK_TOKEN
-        api_client._token_acquired = datetime.now(timezone.utc)
-        api_client._invalidate_token()
-        assert not api_client._token_is_valid()
+    def test_token_invalid_after_invalidation(self):
+        client = RainSoftApiClient(MOCK_EMAIL, MOCK_PASSWORD, session=MagicMock())
+        client._token = MOCK_TOKEN
+        client._token_acquired = datetime.now(timezone.utc)
+        client._invalidate_token()
+        assert not client._token_is_valid()
 
 
 class TestParseDatetime:

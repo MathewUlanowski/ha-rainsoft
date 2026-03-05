@@ -35,9 +35,7 @@ class RainSoftConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the initial setup step."""
         errors: dict[str, str] = {}
 
@@ -59,9 +57,7 @@ class RainSoftConfigFlow(ConfigFlow, domain=DOMAIN):
                 if not devices:
                     errors["base"] = "no_devices"
                 else:
-                    await self.async_set_unique_id(
-                        user_input[CONF_EMAIL].lower()
-                    )
+                    await self.async_set_unique_id(user_input[CONF_EMAIL].lower())
                     self._abort_if_unique_id_configured()
 
                     return self.async_create_entry(
@@ -80,15 +76,11 @@ class RainSoftConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(
-        self, entry_data: dict[str, Any]
-    ) -> ConfigFlowResult:
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
         """Handle re-authentication."""
         return await self.async_step_reauth_confirm()
 
-    async def async_step_reauth_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_reauth_confirm(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Prompt user to re-enter credentials."""
         errors: dict[str, str] = {}
 
@@ -106,9 +98,7 @@ class RainSoftConfigFlow(ConfigFlow, domain=DOMAIN):
             except Exception:  # noqa: BLE001
                 errors["base"] = "unknown"
             else:
-                entry = self.hass.config_entries.async_get_entry(
-                    self.context["entry_id"]
-                )
+                entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
                 if entry:
                     self.hass.config_entries.async_update_entry(
                         entry,
@@ -140,9 +130,7 @@ class RainSoftConfigFlow(ConfigFlow, domain=DOMAIN):
 class RainSoftOptionsFlow(OptionsFlow):
     """Handle options for RainSoft."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Manage polling interval option."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
@@ -153,9 +141,7 @@ class RainSoftOptionsFlow(OptionsFlow):
                 {
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
-                        default=self.config_entry.options.get(
-                            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-                        ),
+                        default=self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): vol.All(vol.Coerce(int), vol.Range(min=5, max=1440)),
                 }
             ),

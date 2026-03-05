@@ -28,9 +28,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class RainSoftRefreshButton(
-    CoordinatorEntity[RainSoftCoordinator], ButtonEntity
-):
+class RainSoftRefreshButton(CoordinatorEntity[RainSoftCoordinator], ButtonEntity):
     """Button to trigger an immediate data refresh."""
 
     _attr_has_entity_name = True

@@ -33,15 +33,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinators: dict[int, RainSoftCoordinator] = {}
     for location in locations:
         for device in location.devices:
-            coordinator = RainSoftCoordinator(
-                hass, client, device, location, scan_interval
-            )
+            coordinator = RainSoftCoordinator(hass, client, device, location, scan_interval)
             await coordinator.async_config_entry_first_refresh()
             coordinators[device.device_id] = coordinator
 
-    entry.runtime_data = RainSoftRuntimeData(
-        client=client, coordinators=coordinators
-    )
+    entry.runtime_data = RainSoftRuntimeData(client=client, coordinators=coordinators)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -62,8 +58,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
-async def _async_update_listener(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> None:
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options update by reloading the integration."""
     await hass.config_entries.async_reload(entry.entry_id)

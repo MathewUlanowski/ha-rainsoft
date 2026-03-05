@@ -92,14 +92,10 @@ class RainSoftSwitch(CoordinatorEntity[RainSoftCoordinator], SwitchEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         """Turn on vacation mode."""
-        await self.coordinator.client.set_vacation_mode(
-            self.coordinator.device_id, enabled=True
-        )
+        await self.coordinator.client.set_vacation_mode(self.coordinator.device_id, enabled=True)
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs) -> None:
         """Turn off vacation mode."""
-        await self.coordinator.client.set_vacation_mode(
-            self.coordinator.device_id, enabled=False
-        )
+        await self.coordinator.client.set_vacation_mode(self.coordinator.device_id, enabled=False)
         await self.coordinator.async_request_refresh()

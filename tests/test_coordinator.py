@@ -25,9 +25,7 @@ def coordinator(hass: HomeAssistant, mock_device, mock_location):
     """Create a coordinator with a mock client."""
     client = AsyncMock()
     client.get_locations = AsyncMock(return_value=[mock_location])
-    coord = RainSoftCoordinator(
-        hass, client, mock_device, mock_location, scan_interval_minutes=30
-    )
+    coord = RainSoftCoordinator(hass, client, mock_device, mock_location, scan_interval_minutes=30)
     return coord
 
 
@@ -40,9 +38,7 @@ class TestCoordinator:
         assert result.salt_lbs == mock_device.salt_lbs
 
     async def test_update_device_not_found(self, coordinator):
-        empty_location = RainSoftLocation(
-            location_id=1, name="Home", devices=[]
-        )
+        empty_location = RainSoftLocation(location_id=1, name="Home", devices=[])
         coordinator.client.get_locations.return_value = [empty_location]
 
         with pytest.raises(UpdateFailed, match="not found"):
@@ -63,9 +59,7 @@ class TestCoordinator:
     async def test_update_finds_correct_device(self, coordinator):
         other_device = RainSoftDevice(device_id=999, name="Other")
         target_device = RainSoftDevice(device_id=MOCK_DEVICE_ID, name="Target", salt_lbs=55)
-        location = RainSoftLocation(
-            location_id=1, name="Home", devices=[other_device, target_device]
-        )
+        location = RainSoftLocation(location_id=1, name="Home", devices=[other_device, target_device])
         coordinator.client.get_locations.return_value = [location]
 
         result = await coordinator._async_update_data()

@@ -64,14 +64,8 @@ class RainSoftCoordinator(DataUpdateCoordinator[RainSoftDevice]):
                     if dev.device_id == self.device_id:
                         return dev
 
-            raise UpdateFailed(
-                f"Device {self.device_id} not found in API response"
-            )
+            raise UpdateFailed(f"Device {self.device_id} not found in API response")
         except AuthenticationError as err:
-            raise ConfigEntryAuthFailed(
-                f"Authentication failed: {err}"
-            ) from err
+            raise ConfigEntryAuthFailed(f"Authentication failed: {err}") from err
         except CannotConnectError as err:
-            raise UpdateFailed(
-                f"Error communicating with RainSoft API: {err}"
-            ) from err
+            raise UpdateFailed(f"Error communicating with RainSoft API: {err}") from err

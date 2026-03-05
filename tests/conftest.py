@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.rainsoft.api import RainSoftDevice, RainSoftLocation
 from custom_components.rainsoft.const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
@@ -67,17 +68,12 @@ def mock_location(mock_device: RainSoftDevice) -> RainSoftLocation:
 
 
 @pytest.fixture
-def mock_config_entry(hass):
+def mock_config_entry(hass) -> MockConfigEntry:
     """Create a mock config entry."""
-    from homeassistant.config_entries import ConfigEntry
-
-    entry = ConfigEntry(
-        version=1,
-        minor_version=1,
+    entry = MockConfigEntry(
         domain=DOMAIN,
         title=MOCK_EMAIL,
         data={CONF_EMAIL: MOCK_EMAIL, CONF_PASSWORD: MOCK_PASSWORD},
-        source="user",
         unique_id=MOCK_EMAIL,
     )
     entry.add_to_hass(hass)

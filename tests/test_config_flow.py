@@ -36,9 +36,7 @@ class TestUserFlow:
     """Tests for the user setup flow."""
 
     async def test_successful_setup(self, hass: HomeAssistant, mock_get_locations):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": config_entries.SOURCE_USER}
-        )
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
         assert result["type"] is FlowResultType.FORM
 
         result = await hass.config_entries.flow.async_configure(
@@ -52,9 +50,7 @@ class TestUserFlow:
     async def test_invalid_auth(self, hass: HomeAssistant, mock_get_locations):
         mock_get_locations.get_locations.side_effect = AuthenticationError("bad creds")
 
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": config_entries.SOURCE_USER}
-        )
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {CONF_EMAIL: MOCK_EMAIL, CONF_PASSWORD: "wrong"},
@@ -65,9 +61,7 @@ class TestUserFlow:
     async def test_cannot_connect(self, hass: HomeAssistant, mock_get_locations):
         mock_get_locations.get_locations.side_effect = CannotConnectError("timeout")
 
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": config_entries.SOURCE_USER}
-        )
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {CONF_EMAIL: MOCK_EMAIL, CONF_PASSWORD: MOCK_PASSWORD},
@@ -76,13 +70,9 @@ class TestUserFlow:
         assert result["errors"] == {"base": "cannot_connect"}
 
     async def test_no_devices(self, hass: HomeAssistant, mock_get_locations):
-        mock_get_locations.get_locations.return_value = [
-            RainSoftLocation(location_id=1, name="Home", devices=[])
-        ]
+        mock_get_locations.get_locations.return_value = [RainSoftLocation(location_id=1, name="Home", devices=[])]
 
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": config_entries.SOURCE_USER}
-        )
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {CONF_EMAIL: MOCK_EMAIL, CONF_PASSWORD: MOCK_PASSWORD},
@@ -93,9 +83,7 @@ class TestUserFlow:
     async def test_unknown_error(self, hass: HomeAssistant, mock_get_locations):
         mock_get_locations.get_locations.side_effect = RuntimeError("surprise")
 
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": config_entries.SOURCE_USER}
-        )
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {CONF_EMAIL: MOCK_EMAIL, CONF_PASSWORD: MOCK_PASSWORD},
@@ -104,9 +92,7 @@ class TestUserFlow:
         assert result["errors"] == {"base": "unknown"}
 
     async def test_duplicate_entry(self, hass: HomeAssistant, mock_get_locations, mock_config_entry):
-        result = await hass.config_entries.flow.async_init(
-            DOMAIN, context={"source": config_entries.SOURCE_USER}
-        )
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
             {CONF_EMAIL: MOCK_EMAIL, CONF_PASSWORD: MOCK_PASSWORD},

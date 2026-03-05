@@ -144,28 +144,20 @@ class RainSoftApiClient:
                 if resp.status in (400, 401):
                     raise AuthenticationError("Invalid email or password")
                 if resp.status != 200:
-                    raise CannotConnectError(
-                        f"Login returned HTTP {resp.status}"
-                    )
+                    raise CannotConnectError(f"Login returned HTTP {resp.status}")
 
                 data = await resp.json()
                 token = data.get("authentication_token")
                 if not token:
-                    raise AuthenticationError(
-                        "No authentication_token in response"
-                    )
+                    raise AuthenticationError("No authentication_token in response")
 
                 _LOGGER.debug("Authenticated successfully")
                 return token
 
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-            raise CannotConnectError(
-                f"Cannot connect to RainSoft API: {err}"
-            ) from err
+            raise CannotConnectError(f"Cannot connect to RainSoft API: {err}") from err
 
-    async def _logout(
-        self, session: aiohttp.ClientSession, token: str
-    ) -> None:
+    async def _logout(self, session: aiohttp.ClientSession, token: str) -> None:
         """Invalidate the auth token."""
         url = f"{BASE_URL}{API_LOGOUT}"
 
@@ -202,9 +194,7 @@ class RainSoftApiClient:
         self._token_acquired = datetime.now(timezone.utc)
         return self._token
 
-    async def _api_get(
-        self, session: aiohttp.ClientSession, path: str
-    ) -> dict:
+    async def _api_get(self, session: aiohttp.ClientSession, path: str) -> dict:
         """Authenticated GET with automatic retry on 401."""
         url = f"{BASE_URL}{path}"
 
@@ -229,9 +219,7 @@ class RainSoftApiClient:
                     return await resp.json()
 
             except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-                raise CannotConnectError(
-                    f"API request failed: {err}"
-                ) from err
+                raise CannotConnectError(f"API request failed: {err}") from err
 
         raise CannotConnectError("Unexpected: exhausted retry attempts")
 
@@ -267,9 +255,7 @@ class RainSoftApiClient:
                     return await resp.json()
 
             except (aiohttp.ClientError, asyncio.TimeoutError) as err:
-                raise CannotConnectError(
-                    f"API request failed: {err}"
-                ) from err
+                raise CannotConnectError(f"API request failed: {err}") from err
 
         raise CannotConnectError("Unexpected: exhausted retry attempts")
 
@@ -291,9 +277,7 @@ class RainSoftApiClient:
                 data = await self._api_get(session, API_CUSTOMER)
                 cid = data.get("id")
                 if not cid:
-                    raise CannotConnectError(
-                        "No customer ID in profile response"
-                    )
+                    raise CannotConnectError("No customer ID in profile response")
                 self._customer_id = int(cid)
 
             # Get locations + devices (basic info)
@@ -311,9 +295,7 @@ class RainSoftApiClient:
                             # Merge detail fields into device data (detail wins)
                             dev_data.update(detail)
                         except (CannotConnectError, AuthenticationError):
-                            _LOGGER.warning(
-                                "Failed to fetch details for device %s", device_id
-                            )
+                            _LOGGER.warning("Failed to fetch details for device %s", device_id)
 
             return self._parse_locations(data)
 
@@ -324,16 +306,17 @@ class RainSoftApiClient:
         async with self._request_lock:
             session = await self._get_session()
             path = API_DEVICE_SETTINGS.format(device_id=device_id)
-            setting_changes = json_mod.dumps([
-                {
-                    "vacation_mode": "1" if enabled else "0",
-                    "set_at": datetime.now(timezone.utc).strftime(
-                        "%Y-%m-%dT%H:%M:%S.%f"
-                    )[:-3] + "Z",
-                }
-            ])
+            setting_changes = json_mod.dumps(
+                [
+                    {
+                        "vacation_mode": "1" if enabled else "0",
+                        "set_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
+                    }
+                ]
+            )
             await self._api_post_form(
-                session, path,
+                session,
+                path,
                 {"settingChanges": setting_changes},
             )
 
@@ -373,22 +356,14 @@ class RainSoftApiClient:
                         max_salt=dev_data.get("maxSalt"),
                         capacity_remaining=dev_data.get("capacityRemaining"),
                         is_vacation_mode=dev_data.get("isVacationMode"),
-                        regen_time=cls._parse_datetime(
-                            dev_data.get("regenTime")
-                        ),
-                        install_date=cls._parse_datetime(
-                            dev_data.get("installDate")
-                        ),
-                        registered_at=cls._parse_datetime(
-                            dev_data.get("registeredAt")
-                        ),
+                        regen_time=cls._parse_datetime(dev_data.get("regenTime")),
+                        install_date=cls._parse_datetime(dev_data.get("installDate")),
+                        registered_at=cls._parse_datetime(dev_data.get("registeredAt")),
                         daily_water_use=dev_data.get("dailyWaterUse"),
                         water_28_day=dev_data.get("water28Day"),
                         flow_since_last_regen=dev_data.get("flowSinceLastRegen"),
                         lifetime_flow=dev_data.get("lifeTimeFlow"),
-                        last_regen_date=cls._parse_datetime(
-                            dev_data.get("lastRegenDate")
-                        ),
+                        last_regen_date=cls._parse_datetime(dev_data.get("lastRegenDate")),
                         regens_28_day=dev_data.get("regens28Day"),
                         average_monthly_salt=dev_data.get("averageMonthlySalt"),
                         salt_28_day=dev_data.get("salt28Day"),

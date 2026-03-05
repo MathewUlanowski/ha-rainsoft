@@ -34,9 +34,7 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[RainSoftBinarySensorEntityDescription, ...] = 
         translation_key="low_salt",
         device_class=BinarySensorDeviceClass.PROBLEM,
         icon="mdi:shaker-outline",
-        value_fn=lambda d: (
-            d.status_name.lower() == "low salt" if d.status_name else None
-        ),
+        value_fn=lambda d: (d.status_name.lower() == "low salt" if d.status_name else None),
     ),
 )
 
@@ -57,9 +55,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class RainSoftBinarySensor(
-    CoordinatorEntity[RainSoftCoordinator], BinarySensorEntity
-):
+class RainSoftBinarySensor(CoordinatorEntity[RainSoftCoordinator], BinarySensorEntity):
     """A RainSoft binary sensor entity."""
 
     entity_description: RainSoftBinarySensorEntityDescription
