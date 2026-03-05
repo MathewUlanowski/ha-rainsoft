@@ -68,6 +68,9 @@
     },
     "switch": {
       "vacation_mode": { "name": "Vacation Mode" }
+    },
+    "button": {
+      "refresh": { "name": "Refresh Data" }
     }
   }
 }

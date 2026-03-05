@@ -1,0 +1,193 @@
+title: RainSoft Water Softener
+views:
+  - title: Overview
+    path: rainsoft
+    icon: mdi:water-pump
+    type: sections
+    sections:
+      # ── Status & Controls ──
+      - type: grid
+        title: System Status
+        cards:
+          - type: entity
+            entity: sensor.ec5_status
+            name: Status
+            icon: mdi:information-outline
+
+          - type: entity
+            entity: binary_sensor.ec5_low_salt
+            name: Low Salt Alert
+
+          - type: entity
+            entity: switch.ec5_vacation_mode
+            name: Vacation Mode
+
+          - type: button
+            entity: button.ec5_refresh_data
+            name: Refresh Data
+            tap_action:
+              action: toggle
+            icon: mdi:refresh
+            show_name: true
+            show_icon: true
+
+      # ── Salt Levels ──
+      - type: grid
+        title: Salt
+        cards:
+          - type: gauge
+            entity: sensor.ec5_salt_remaining
+            name: Salt Remaining
+            unit: lbs
+            needle: true
+            min: 0
+            max: 80
+            segments:
+              - from: 0
+                color: "#db4437"
+              - from: 15
+                color: "#ffa600"
+              - from: 30
+                color: "#43a047"
+
+          - type: history-graph
+            title: Salt Level (7 Days)
+            hours_to_show: 168
+            entities:
+              - entity: sensor.ec5_salt_remaining
+                name: Salt Remaining
+
+          - type: statistic
+            entity: sensor.ec5_average_monthly_salt
+            name: Avg Monthly Salt
+            period:
+              calendar:
+                period: month
+            stat_type: mean
+
+          - type: entity
+            entity: sensor.ec5_salt_used_28_days
+            name: Salt Used (28 Days)
+            icon: mdi:shaker
+
+      # ── Water Usage ──
+      - type: grid
+        title: Water Usage
+        cards:
+          - type: statistic
+            entity: sensor.ec5_daily_water_use
+            name: Today's Usage
+            period:
+              calendar:
+                period: day
+            stat_type: mean
+
+          - type: history-graph
+            title: Daily Water Use (7 Days)
+            hours_to_show: 168
+            entities:
+              - entity: sensor.ec5_daily_water_use
+                name: Daily Use (gal)
+
+          - type: history-graph
+            title: 28-Day Water Use
+            hours_to_show: 672
+            entities:
+              - entity: sensor.ec5_28_day_water_use
+                name: 28-Day Total (gal)
+
+          - type: entity
+            entity: sensor.ec5_flow_since_last_regen
+            name: Flow Since Last Regen
+            icon: mdi:water-sync
+
+          - type: entity
+            entity: sensor.ec5_lifetime_water_flow
+            name: Lifetime Flow
+            icon: mdi:counter
+
+      # ── Capacity & Regeneration ──
+      - type: grid
+        title: Regeneration
+        cards:
+          - type: gauge
+            entity: sensor.ec5_capacity_remaining
+            name: Capacity Remaining
+            unit: grains
+            needle: true
+            min: 0
+            max: 30000
+            segments:
+              - from: 0
+                color: "#db4437"
+              - from: 7500
+                color: "#ffa600"
+              - from: 15000
+                color: "#43a047"
+
+          - type: history-graph
+            title: Capacity (7 Days)
+            hours_to_show: 168
+            entities:
+              - entity: sensor.ec5_capacity_remaining
+                name: Capacity (grains)
+
+          - type: entity
+            entity: sensor.ec5_next_regeneration
+            name: Next Regeneration
+            icon: mdi:recycle
+
+          - type: entity
+            entity: sensor.ec5_last_regeneration
+            name: Last Regeneration
+            icon: mdi:history
+
+          - type: entity
+            entity: sensor.ec5_regenerations_28_days
+            name: Regens (28 Days)
+            icon: mdi:recycle
+
+      # ── Water Quality & System ──
+      - type: grid
+        title: Water Quality & System
+        cards:
+          - type: entity
+            entity: sensor.ec5_water_hardness
+            name: Water Hardness
+            icon: mdi:water-opacity
+
+          - type: entity
+            entity: sensor.ec5_iron_level
+            name: Iron Level
+            icon: mdi:flask
+
+          - type: entity
+            entity: sensor.ec5_system_pressure
+            name: System Pressure
+            icon: mdi:gauge-low
+
+          - type: entity
+            entity: sensor.ec5_drain_flow_rate
+            name: Drain Flow Rate
+            icon: mdi:pipe-valve
+
+      # ── Device Info ──
+      - type: grid
+        title: Device Info
+        cards:
+          - type: entity
+            entity: sensor.ec5_unit_size
+            name: Unit Size
+
+          - type: entity
+            entity: sensor.ec5_resin_type
+            name: Resin Type
+
+          - type: entity
+            entity: sensor.ec5_install_date
+            name: Install Date
+
+          - type: entity
+            entity: sensor.ec5_months_since_service
+            name: Months Since Service
+            icon: mdi:wrench-clock
