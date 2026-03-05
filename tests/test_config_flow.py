@@ -5,12 +5,15 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.rainsoft.api import AuthenticationError, CannotConnectError
+from custom_components.rainsoft.api import (
+    AuthenticationError,
+    CannotConnectError,
+    RainSoftLocation,
+)
 from custom_components.rainsoft.const import CONF_EMAIL, CONF_PASSWORD, DOMAIN
 
 from .conftest import MOCK_EMAIL, MOCK_PASSWORD
@@ -73,14 +76,6 @@ class TestUserFlow:
         assert result["errors"] == {"base": "cannot_connect"}
 
     async def test_no_devices(self, hass: HomeAssistant, mock_get_locations):
-        mock_get_locations.get_locations.return_value = [
-            type(mock_get_locations.get_locations.return_value[0])(
-                location_id=1, name="Home", devices=[]
-            )
-        ]
-        # Return a location with no devices
-        from custom_components.rainsoft.api import RainSoftLocation
-
         mock_get_locations.get_locations.return_value = [
             RainSoftLocation(location_id=1, name="Home", devices=[])
         ]

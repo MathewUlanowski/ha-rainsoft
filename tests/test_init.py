@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
-
 from homeassistant.core import HomeAssistant
 
-from custom_components.rainsoft.const import DOMAIN
 from custom_components.rainsoft.coordinator import RainSoftRuntimeData
 
 

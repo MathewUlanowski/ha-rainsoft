@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 import pytest
-
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import UpdateFailed
