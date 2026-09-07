@@ -7,8 +7,9 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
-from .api import RainSoftApiClient
+from .api import AuthenticationError, CannotConnectError, RainSoftApiClient
 from .const import CONF_EMAIL, CONF_PASSWORD, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
 from .coordinator import RainSoftCoordinator, RainSoftRuntimeData
 
@@ -24,25 +25,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         password=entry.data[CONF_PASSWORD],
     )
 
-    # Discover locations and devices (handles login/logout internally)
-    locations = await client.get_locations()
+    setup_succeeded = False
+    try:
+        # Discover locations and devices (handles login/logout internally)
+        locations = await client.get_locations()
 
-    scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
-    # Create one coordinator per device across all locations
-    coordinators: dict[int, RainSoftCoordinator] = {}
-    for location in locations:
-        for device in location.devices:
-            coordinator = RainSoftCoordinator(hass, client, device, location, scan_interval)
-            await coordinator.async_config_entry_first_refresh()
-            coordinators[device.device_id] = coordinator
+        # Create one coordinator per device across all locations
+        coordinators: dict[int, RainSoftCoordinator] = {}
+        for location in locations:
+            for device in location.devices:
+                coordinator = RainSoftCoordinator(hass, client, device, location, scan_interval)
+                await coordinator.async_config_entry_first_refresh()
+                coordinators[device.device_id] = coordinator
 
-    entry.runtime_data = RainSoftRuntimeData(client=client, coordinators=coordinators)
+        entry.runtime_data = RainSoftRuntimeData(client=client, coordinators=coordinators)
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Re-create coordinators when options change
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+        # Re-create coordinators when options change
+        entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+        setup_succeeded = True
+    except AuthenticationError as err:
+        raise ConfigEntryAuthFailed("RainSoft authentication failed") from err
+    except CannotConnectError as err:
+        raise ConfigEntryNotReady(f"RainSoft cloud service unavailable: {err}") from err
+    finally:
+        if not setup_succeeded:
+            await client.close()
 
     return True
 
